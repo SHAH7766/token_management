@@ -6,6 +6,8 @@ import {
   updatePatient,
   deletePatient
 } from '../controllers/patientController.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authorizeRoles } from '../middleware/roleMiddleware.js';
 
 const router = express.Router();
 
@@ -20,8 +22,10 @@ const router = express.Router();
  * @swagger
  * /api/v1/patients:
  *   post:
- *     summary: Register a new patient
+ *     summary: Register a new patient (Admin, Receptionist)
  *     tags: [Patients]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -48,17 +52,23 @@ const router = express.Router();
  *                 example: "1990-05-15"
  *               address:
  *                 type: string
- *                 example: "House 123, Street 4, City"
+ *                 example: "House 12, Street 3, Lahore"
  *     responses:
  *       201:
  *         description: Patient created successfully
  *       400:
  *         description: Validation error or missing fields
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  *       409:
  *         description: Duplicate phone number
  *   get:
- *     summary: Get all patients with optional search and pagination
+ *     summary: Get all patients with optional search and pagination (Admin, Receptionist, Doctor)
  *     tags: [Patients]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: search
@@ -80,16 +90,20 @@ const router = express.Router();
  *     responses:
  *       200:
  *         description: List of patients retrieved successfully
+ *       401:
+ *         description: Unauthorized
  */
-router.post('/', createPatient);
-router.get('/', getPatients);
+router.post('/', authenticateToken, authorizeRoles('ADMIN', 'RECEPTIONIST'), createPatient);
+router.get('/', authenticateToken, authorizeRoles('ADMIN', 'RECEPTIONIST', 'DOCTOR'), getPatients);
 
 /**
  * @swagger
  * /api/v1/patients/{id}:
  *   get:
- *     summary: Get patient by ID
+ *     summary: Get patient by ID (Admin, Receptionist, Doctor)
  *     tags: [Patients]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -103,8 +117,10 @@ router.get('/', getPatients);
  *       404:
  *         description: Patient not found
  *   put:
- *     summary: Update patient details
+ *     summary: Update patient details (Admin, Receptionist)
  *     tags: [Patients]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -135,8 +151,10 @@ router.get('/', getPatients);
  *       404:
  *         description: Patient not found
  *   delete:
- *     summary: Delete a patient
+ *     summary: Delete a patient (Admin only)
  *     tags: [Patients]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -149,8 +167,8 @@ router.get('/', getPatients);
  *       404:
  *         description: Patient not found
  */
-router.get('/:id', getPatientById);
-router.put('/:id', updatePatient);
-router.delete('/:id', deletePatient);
+router.get('/:id', authenticateToken, authorizeRoles('ADMIN', 'RECEPTIONIST', 'DOCTOR'), getPatientById);
+router.put('/:id', authenticateToken, authorizeRoles('ADMIN', 'RECEPTIONIST'), updatePatient);
+router.delete('/:id', authenticateToken, authorizeRoles('ADMIN'), deletePatient);
 
 export default router;

@@ -7,7 +7,7 @@ const options = {
     info: {
       title: 'Clinic Client Token Management REST API',
       version: '1.0.0',
-      description: 'A robust REST API for managing clinic patients, doctors, queue tokens, and token audit history using Node.js, Express, and Neon PostgreSQL.',
+      description: 'A robust REST API for managing clinic patients, doctors, queue tokens, user authentication, and RBAC authorization using Node.js, Express, JWT, and Neon PostgreSQL.',
       contact: {
         name: 'API Support',
       },
@@ -18,7 +18,25 @@ const options = {
         description: 'Local Development Server',
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter your JWT Bearer token in the format: Bearer <token>',
+        },
+      },
+    },
     tags: [
+      {
+        name: 'Authentication',
+        description: 'User authentication, login, registration, and profile management',
+      },
+      {
+        name: 'Users (Admin)',
+        description: 'User account management (Admin only)',
+      },
       {
         name: 'Patients',
         description: 'Patient registration and management operations',

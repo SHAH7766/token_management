@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import doctorRoutes from './routes/doctorRoutes.js';
 import tokenRoutes from './routes/tokenRoutes.js';
@@ -17,6 +19,8 @@ app.use(express.json());
 setupSwagger(app);
 
 // API Routes
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/patients', patientRoutes);
 app.use('/api/v1/doctors', doctorRoutes);
 app.use('/api/v1/tokens', tokenRoutes);

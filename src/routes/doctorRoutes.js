@@ -7,8 +7,9 @@ import {
   updateDoctorStatus,
   deleteDoctor
 } from '../controllers/doctorController.js';
-
 import { getDoctorQueue } from '../controllers/tokenController.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authorizeRoles } from '../middleware/roleMiddleware.js';
 
 const router = express.Router();
 
@@ -23,8 +24,10 @@ const router = express.Router();
  * @swagger
  * /api/v1/doctors:
  *   post:
- *     summary: Register a new doctor
+ *     summary: Register a new doctor (Admin only)
  *     tags: [Doctors]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -52,9 +55,15 @@ const router = express.Router();
  *         description: Doctor registered successfully
  *       400:
  *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  *   get:
- *     summary: Get all doctors with optional filters
+ *     summary: Get all doctors with optional filters (Admin, Receptionist, Doctor)
  *     tags: [Doctors]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: specialization
@@ -70,15 +79,17 @@ const router = express.Router();
  *       200:
  *         description: List of doctors retrieved successfully
  */
-router.post('/', createDoctor);
-router.get('/', getDoctors);
+router.post('/', authenticateToken, authorizeRoles('ADMIN'), createDoctor);
+router.get('/', authenticateToken, authorizeRoles('ADMIN', 'RECEPTIONIST', 'DOCTOR'), getDoctors);
 
 /**
  * @swagger
  * /api/v1/doctors/{id}:
  *   get:
- *     summary: Get doctor by ID
+ *     summary: Get doctor by ID (Admin, Receptionist, Doctor)
  *     tags: [Doctors]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -91,8 +102,10 @@ router.get('/', getDoctors);
  *       404:
  *         description: Doctor not found
  *   put:
- *     summary: Update doctor details
+ *     summary: Update doctor details (Admin only)
  *     tags: [Doctors]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -120,8 +133,10 @@ router.get('/', getDoctors);
  *       404:
  *         description: Doctor not found
  *   delete:
- *     summary: Delete a doctor
+ *     summary: Delete a doctor (Admin only)
  *     tags: [Doctors]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -134,16 +149,18 @@ router.get('/', getDoctors);
  *       404:
  *         description: Doctor not found
  */
-router.get('/:id', getDoctorById);
-router.put('/:id', updateDoctor);
-router.delete('/:id', deleteDoctor);
+router.get('/:id', authenticateToken, authorizeRoles('ADMIN', 'RECEPTIONIST', 'DOCTOR'), getDoctorById);
+router.put('/:id', authenticateToken, authorizeRoles('ADMIN'), updateDoctor);
+router.delete('/:id', authenticateToken, authorizeRoles('ADMIN'), deleteDoctor);
 
 /**
  * @swagger
  * /api/v1/doctors/{id}/status:
  *   patch:
- *     summary: Activate or deactivate a doctor
+ *     summary: Activate or deactivate a doctor (Admin only)
  *     tags: [Doctors]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -168,14 +185,16 @@ router.delete('/:id', deleteDoctor);
  *       404:
  *         description: Doctor not found
  */
-router.patch('/:id/status', updateDoctorStatus);
+router.patch('/:id/status', authenticateToken, authorizeRoles('ADMIN'), updateDoctorStatus);
 
 /**
  * @swagger
  * /api/v1/doctors/{doctorId}/queue:
  *   get:
- *     summary: Get a doctor's daily queue
+ *     summary: Get a doctor's daily queue (Admin, Receptionist, Doctor - Doctors can only view their own queue)
  *     tags: [Doctors, Tokens]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: doctorId
@@ -191,9 +210,11 @@ router.patch('/:id/status', updateDoctorStatus);
  *     responses:
  *       200:
  *         description: Doctor's daily queue retrieved successfully
+ *       403:
+ *         description: Forbidden (Doctor attempting to access another doctor's queue)
  *       404:
  *         description: Doctor not found
  */
-router.get('/:doctorId/queue', getDoctorQueue);
+router.get('/:doctorId/queue', authenticateToken, authorizeRoles('ADMIN', 'RECEPTIONIST', 'DOCTOR'), getDoctorQueue);
 
 export default router;

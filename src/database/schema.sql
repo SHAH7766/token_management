@@ -5,6 +5,7 @@
 -- Drop tables if they exist (in reverse order of dependencies)
 DROP TABLE IF EXISTS token_history CASCADE;
 DROP TABLE IF EXISTS tokens CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS doctors CASCADE;
 DROP TABLE IF EXISTS patients CASCADE;
 
@@ -37,7 +38,25 @@ CREATE TABLE doctors (
 );
 
 -- =====================================================================
--- 3. Tokens Table
+-- 3. Users Table (Authentication & RBAC)
+-- Stores system users (ADMIN, RECEPTIONIST, DOCTOR)
+-- =====================================================================
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    phone VARCHAR(20) UNIQUE NULL,
+    password_hash TEXT NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'RECEPTIONIST'
+        CHECK (role IN ('ADMIN', 'RECEPTIONIST', 'DOCTOR')),
+    doctor_id INTEGER UNIQUE NULL REFERENCES doctors(doctor_id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================================================================
+-- 4. Tokens Table
 -- Stores queue tokens issued to patients for specific doctors on specific dates.
 -- =====================================================================
 CREATE TABLE tokens (
@@ -58,7 +77,7 @@ CREATE TABLE tokens (
 );
 
 -- =====================================================================
--- 4. TokenHistory Table
+-- 5. TokenHistory Table
 -- Tracks every status change for auditing and tracking history.
 -- =====================================================================
 CREATE TABLE token_history (
@@ -79,6 +98,10 @@ CREATE INDEX idx_patients_full_name ON patients(full_name);
 
 CREATE INDEX idx_doctors_specialization ON doctors(specialization);
 CREATE INDEX idx_doctors_is_active ON doctors(is_active);
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_doctor_id ON users(doctor_id);
 
 CREATE INDEX idx_tokens_doctor_date ON tokens(doctor_id, token_date);
 CREATE INDEX idx_tokens_status ON tokens(status);
